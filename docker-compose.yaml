@@ -1,0 +1,44 @@
+version: "3.7"
+x-common:
+  - &DB_ROOTPASS passw0rd
+  - &DB_PASS limesurvey
+  - &DB_USER limesurvey
+  - &DB_NAME limesurvey
+
+services:
+  limesurvey:
+    tty: true
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.limesurvey
+    #  args:
+    #    http_proxy: ${http_proxy}
+    #    https_proxy: ${http_proxy}
+    restart: always
+    command: apachectl -DFOREGROUND
+    logging:
+      driver: "json-file" # defaults if not specified
+      options:
+        max-size: "1m"
+        max-file: "1"
+    ports:
+      - "8080:80"
+
+  db:
+    platform: linux/amd64
+    image: mysql:8.0-debian
+    environment:
+      MYSQL_ROOT_PASSWORD: *DB_ROOTPASS
+      MYSQL_DATABASE: *DB_NAME
+      MYSQL_USER: *DB_USER
+      MYSQL_PASSWORD: *DB_PASS
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - "13306:3306"
+
+volumes:
+  db:
+    driver: "local"
+

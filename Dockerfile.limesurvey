@@ -1,0 +1,33 @@
+FROM --platform=linux/amd64 php:8.1-apache-bullseye as asset
+
+ARG LIMESURVEY_VER=5.3.16+220523
+
+RUN apt update \
+  && apt install -y \
+      curl \
+      zip \
+  && apt clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && pwd \
+  && curl -L -o /limesurvey.zip https://download.limesurvey.org/latest-stable-release/limesurvey${LIMESURVEY_VER}.zip \
+  && unzip /limesurvey.zip
+
+FROM --platform=linux/amd64 php:8.1-apache-bullseye
+
+COPY --from=asset /var/www/html/limesurvey /var/www/html/limesurvey
+RUN apt update \
+    && apt upgrade -y \
+    && apt install -y \
+        libc-client-dev \
+        libjpeg62-turbo-dev \
+        libkrb5-dev \
+        libldap2-dev \
+        libpng-dev \
+        libzip-dev \
+        zlib1g-dev \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install pdo_mysql gd ldap zip imap \
+    && chown -R www-data:www-data /var/www/html/limesurvey
